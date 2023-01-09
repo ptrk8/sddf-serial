@@ -44,8 +44,8 @@ static void serial_client_printf(char *str) {
     );
     /* Notify the `serial_driver`. Since, we have a lower priority than the
      * `serial_driver`, we will be pre-empted after the call to
-     * `sel4cp_notify()` until the `serial_driver` has finished printing the
-     * character to the screen. */
+     * `sel4cp_notify()` until the `serial_driver` has finished printing
+     * characters to the screen. */
     serial_client_notify_serial_driver();
 }
 
