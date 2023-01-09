@@ -1,0 +1,7 @@
+=== START ===
+Initialising UART device...
+UART device initialisation SUCCESS.
+
+abcabcabcabcabc
+Ending UART test...
+=== END ===
