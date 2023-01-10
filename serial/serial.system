@@ -11,6 +11,21 @@
     <memory_region
             name="serial_to_client_transmit_buf"
             size="0x1_000" />
+    <!--TODO: Explain -->
+    <memory_region
+            name="tx_avail_ring_buf"
+            size="0x200_000"
+            page_size="0x200_000"/>
+    <!--TODO: Explain -->
+    <memory_region
+            name="tx_used_ring_buf"
+            size="0x200_000"
+            page_size="0x200_000"/>
+    <!--TODO: Explain -->
+    <memory_region
+            name="shared_dma"
+            size="0x200_000"
+            page_size="0x200_000"/>
     <!-- The `serial_driver` PD must have a higher priority than the
     `serial_client` PD so that it doesn't get preempted by `serial_client` when
     it is busy writing to the UART device. -->
@@ -42,6 +57,27 @@
                 vaddr="0x6_000_000"
                 perms="r"
                 setvar_vaddr="serial_to_client_transmit_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="tx_avail_ring_buf"
+                vaddr="0x7_000_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="tx_avail_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="tx_used_ring_buf"
+                vaddr="0x7_200_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="tx_used_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="shared_dma"
+                vaddr="0x2_400_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="shared_dma" />
     </protection_domain>
     <!-- The `serial_client` PD must have a lower priority than the
     `serial_driver` PD so that it doesn't preempt `serial_client` when it is
@@ -59,6 +95,27 @@
                 vaddr="0x5_000_000"
                 perms="rw"
                 setvar_vaddr="serial_to_client_transmit_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="tx_avail_ring_buf"
+                vaddr="0x6_000_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="tx_avail_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="tx_used_ring_buf"
+                vaddr="0x6_200_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="tx_used_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="shared_dma"
+                vaddr="0x2_400_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="shared_dma" />
     </protection_domain>
     <!-- Channel between `serial_client` and `serial_driver`. -->
     <channel>

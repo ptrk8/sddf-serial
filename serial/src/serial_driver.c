@@ -7,6 +7,13 @@ uintptr_t uart_base_vaddr;
 /* This is the buffer we read from after `serial_client` writes to it. */
 uintptr_t serial_to_client_transmit_buf;
 
+/* TODO: Explain. */
+uintptr_t tx_avail_ring_buf;
+/* TODO: Explain. */
+uintptr_t tx_used_ring_buf;
+/* TODO: Explain. */
+uintptr_t shared_dma;
+
 serial_driver_t global_serial_driver = {};
 
 /**
