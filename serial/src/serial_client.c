@@ -52,7 +52,7 @@ static void serial_client_printf(char *str) {
     /* The dequeued buffer's length will be stored in `buf_len`. */
     unsigned int buf_len;
     /* We don't use the `cookie` but the `dequeue_avail` function call requires
-     * a valid pointer for the `cookie` param. */
+     * a valid pointer for the `cookie` param, so we provide one to it anyway. */
     void *unused_cookie;
     /* Dequeue an available buffer. */
     int ret_dequeue_avail = dequeue_avail(
