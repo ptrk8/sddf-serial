@@ -6,11 +6,6 @@
             name="uart"
             size="0x10_000"
             phys_addr="0x30890000"/>
-    <!-- This is a shared buffer that `client_buf` writes to and `serial_server_buf`
-    reads from. -->
-    <memory_region
-            name="serial_to_client_transmit_buf"
-            size="0x1_000" />
     <!--TODO: Explain -->
     <memory_region
             name="tx_avail_ring_buf"
@@ -49,14 +44,6 @@
         <irq irq="59" id="2" />
 <!--        <irq irq="60" id="3" />-->
 <!--        <irq irq="61" id="4" />-->
-        <!-- Map in the `serial_to_client_transmit_buf` as Read-only since the
-        `serial_driver` PD simply needs to be able to read what the
-        `serial_client` PD is wants to write to the UART device. -->
-        <map
-                mr="serial_to_client_transmit_buf"
-                vaddr="0x6_000_000"
-                perms="r"
-                setvar_vaddr="serial_to_client_transmit_buf"/>
         <!--TODO: Explain. -->
         <map
                 mr="tx_avail_ring_buf"
@@ -87,14 +74,6 @@
             priority="100"
             pp="true">
         <program_image path="serial_client.elf"/>
-        <!-- Map in the `serial_to_client_transmit_buf` as Read/Write since the
-        `serial_client` PD needs to be able to write to this buffer, which will
-        then be read by the `serial_driver` PD. -->
-        <map
-                mr="serial_to_client_transmit_buf"
-                vaddr="0x5_000_000"
-                perms="rw"
-                setvar_vaddr="serial_to_client_transmit_buf"/>
         <!--TODO: Explain. -->
         <map
                 mr="tx_avail_ring_buf"

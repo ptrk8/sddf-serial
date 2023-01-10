@@ -4,9 +4,6 @@
  * corresponds to the Physical Address of the UART device by the seL4CP tool. */
 uintptr_t uart_base_vaddr;
 
-/* This is the buffer we read from after `serial_client` writes to it. */
-uintptr_t serial_to_client_transmit_buf;
-
 /* TODO: Explain. */
 uintptr_t tx_avail_ring_buf;
 /* TODO: Explain. */
@@ -28,13 +25,6 @@ static int serial_driver_init(
         uintptr_t imx_uart_base_vaddr,
         bool auto_insert_carriage_return
 );
-
-//void serial_write(const char *str) {
-//    while (*str) {
-////        uart_put_char(&uart, *str);
-//        str++;
-//    }
-//}
 
 static int serial_driver_init(
         serial_driver_t *serial_driver,
@@ -72,8 +62,6 @@ void serial_driver_put_char(serial_driver_t *serial_driver, int ch) {
 }
 
 void init(void) {
-//    sel4cp_dbg_puts("\n=== START ===\n");
-//    sel4cp_dbg_puts("Initialising UART device...\n");
     serial_driver_t *serial_driver = &global_serial_driver; /* Local reference to global serial driver for our convenience. */
     /* Initialise our `global_serial_driver` struct. */
     int ret_serial_driver_init = serial_driver_init(
@@ -85,16 +73,6 @@ void init(void) {
         sel4cp_dbg_puts("UART device initialisation FAILED.\n");
         return;
     }
-//    sel4cp_dbg_puts("UART device initialisation SUCCESS.\n");
-//    serial_driver_put_char(serial_driver, '\n');
-//    for (int i = 0; i < 5; i++) {
-//        serial_driver_put_char(serial_driver, 'a');
-//        serial_driver_put_char(serial_driver, 'b');
-//        serial_driver_put_char(serial_driver, 'c');
-//    }
-//    serial_driver_put_char(serial_driver, '\n');
-//    sel4cp_dbg_puts("Ending UART test...\n");
-//    sel4cp_dbg_puts("=== END ===\n");
 }
 
 seL4_MessageInfo_t protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
@@ -128,7 +106,7 @@ void notified(sel4cp_channel channel) {
              * a valid pointer for the `cookie` param, so we provide one to it anyway. */
             void *unused_cookie = NULL;
             /* Keep de-queuing words until there are no words left in the transmit-used queue.
-             * TODO: Double-check if this while-loop is necessary. */
+             * TODO: Double-check with Lucy if this while-loop is necessary. */
             while (driver_dequeue(
                     serial_driver->tx_ring_buf_handle.used_ring,
                     &buf_addr,
@@ -139,25 +117,16 @@ void notified(sel4cp_channel channel) {
                 /* Keep looping and printing out each character of each word
                  * until you hit a NULL terminator. */
                 while (((char *) buf_addr)[curr_idx] != '\0') {
-                    /* Print the character out to the terminal. */
+                    /* Write the character to the serial device. */
                     serial_driver_put_char(
                             serial_driver,
-                            ((char *) buf_addr)[curr_idx]
+                            ((char *) buf_addr)[curr_idx] /* Obtain the relevant
+                            character for the current word in `buf_addr` */
                     );
                     curr_idx++;
                 }
+                /* Note, we deliberately do NOT print out the NULL terminator. */
             }
-//            int curr_idx = 0;
-//            /* Keep looping and printing out the characters until you hit a NULL terminator. */
-//            while (((char *) serial_to_client_transmit_buf)[curr_idx] != '\0') {
-//                /* Print the character out to the terminal. */
-//                serial_driver_put_char(
-//                        serial_driver,
-//                        ((char *) serial_to_client_transmit_buf)[curr_idx]
-//                );
-//                curr_idx++;
-//            }
-            /* Note, we deliberately do NOT print out the NULL terminator. */
             return;
         }
         default:

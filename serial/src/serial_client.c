@@ -1,10 +1,6 @@
 
 #include "serial_client.h"
 
-/* This is the shared buffer we write to and the `serial_driver` PD reads from.
- * */
-uintptr_t serial_to_client_transmit_buf;
-
 /* TODO: Explain. */
 uintptr_t tx_avail_ring_buf;
 /* TODO: Explain. */
@@ -102,15 +98,6 @@ static void serial_client_printf(char *str) {
         sel4cp_dbg_puts("Transmit used ring is full in serial_client_printf().\n");
         return;
     }
-//    /* TODO: Get rid of this once we transition to using sDDF buffers. */
-//    /* Copy the string (including the NULL terminator) into
-//     * `serial_to_client_transmit_buf`. */
-//    memcpy(
-//            (char *) serial_to_client_transmit_buf,
-//            str,
-//            /* We define the length of a string as inclusive of its NULL terminator. */
-//            strlen(str) + 1
-//    );
     /* Notify the `serial_driver`. Since, we have a lower priority than the
      * `serial_driver`, we will be pre-empted after the call to
      * `sel4cp_notify()` until the `serial_driver` has finished printing
