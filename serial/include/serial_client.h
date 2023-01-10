@@ -16,8 +16,9 @@
 
 typedef struct serial_client serial_client_t;
 struct serial_client {
-    /* Ring buffer from transmitting characters to the `serial_driver`. */
-    ring_handle_t tx_ring_buf;
+    /* Transaction ring buffer handle. This is a convenience `struct` that
+     * contains all the pointers to the relevant "available" and "used" buffers. */
+    ring_handle_t tx_ring_buf_handle;
 };
 
 

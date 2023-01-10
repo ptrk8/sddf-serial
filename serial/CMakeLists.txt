@@ -49,6 +49,7 @@ target_link_libraries(
         lib_serial_driver
         lib_sel4cp_imx8mm
         lib_imx_uart
+        serial_lib_shared_ringbuffer
 )
 
 add_library(lib_serial_client src/serial_client.c)

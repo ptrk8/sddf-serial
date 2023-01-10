@@ -56,32 +56,61 @@ static void serial_client_printf(char *str) {
     void *unused_cookie;
     /* Dequeue an available buffer. */
     int ret_dequeue_avail = dequeue_avail(
-            &serial_client->tx_ring_buf,
+            &serial_client->tx_ring_buf_handle,
             &buf_addr,
             &buf_len,
             &unused_cookie
     );
     if (ret_dequeue_avail < 0) {
-        sel4cp_dbg_puts("Failed to dequeue buffer from available queue.\n");
+        sel4cp_dbg_puts("Failed to dequeue buffer from available queue in serial_client_printf().\n");
         return;
     }
+    /* Length of string including the NULL terminator. */
+    size_t str_len = strlen(str) + 1;
     /* Copy the string (including the NULL terminator) into
-     * `buf_addr`. */
+     * `buf_addr` to update our dequeued available buffer. */
     memcpy(
             (char *) buf_addr,
             str,
             /* We define the length of a string as inclusive of its NULL terminator. */
-            strlen(str) + 1
+            str_len
     );
-    /* TODO: Get rid of this once we transition to using sDDF buffers. */
-    /* Copy the string (including the NULL terminator) into
-     * `serial_to_client_transmit_buf`. */
-    memcpy(
-            (char *) serial_to_client_transmit_buf,
-            str,
-            /* We define the length of a string as inclusive of its NULL terminator. */
-            strlen(str) + 1
+    /* Since we have just written fresh data to the `shared_dma` memory region,
+     * we need to clean the cache, which will force the contents of the cache to
+     * be written back to physical memory. This ensures subsequent reads of the
+     * `shared_dma` memory region will contain the latest data we have just
+     * written. */
+    int ret_vspace_clean = seL4_ARM_VSpace_Clean_Data(
+            3, /* */
+            buf_addr,
+            buf_addr + str_len
     );
+    if (ret_vspace_clean) {
+        sel4cp_dbg_puts("Failed to clean cache in serial_client_printf().\n");
+        return;
+    }
+    /* Enqueue our dequeued (and now updated) available buffer into the used
+     * transmit queue. Now the `serial_driver` PD will be able to access our
+     * buffer by de-queuing from this used transmit queue. */
+    int ret_enqueue_used = enqueue_used(
+            &serial_client->tx_ring_buf_handle,
+            buf_addr,
+            str_len,
+            unused_cookie
+    );
+    if (ret_enqueue_used < 0) {
+        sel4cp_dbg_puts("Transmit used ring is full in serial_client_printf().\n");
+        return;
+    }
+//    /* TODO: Get rid of this once we transition to using sDDF buffers. */
+//    /* Copy the string (including the NULL terminator) into
+//     * `serial_to_client_transmit_buf`. */
+//    memcpy(
+//            (char *) serial_to_client_transmit_buf,
+//            str,
+//            /* We define the length of a string as inclusive of its NULL terminator. */
+//            strlen(str) + 1
+//    );
     /* Notify the `serial_driver`. Since, we have a lower priority than the
      * `serial_driver`, we will be pre-empted after the call to
      * `sel4cp_notify()` until the `serial_driver` has finished printing
@@ -92,9 +121,10 @@ static void serial_client_printf(char *str) {
 void init(void) {
     /* Local reference to global serial_client for convenience. */
     serial_client_t *serial_client = &global_serial_client;
-    /* Initialise `tx_ring_buf`. */
+    /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
+     * where all relevant ring buffers are located. */
     ring_init(
-            &serial_client->tx_ring_buf,
+            &serial_client->tx_ring_buf_handle,
             (ring_buffer_t *) tx_avail_ring_buf,
             (ring_buffer_t *) tx_used_ring_buf,
             NULL,
@@ -104,7 +134,7 @@ void init(void) {
      * memory region. */
     for (int i = 0; i < NUM_BUFFERS - 1; i++) {
         int ret_enqueue_avail = enqueue_avail(
-                &serial_client->tx_ring_buf,
+                &serial_client->tx_ring_buf_handle,
                 shared_dma + (BUF_SIZE * i),
                 BUF_SIZE,
                 NULL

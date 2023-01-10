@@ -41,6 +41,20 @@ static int serial_driver_init(
         uintptr_t imx_uart_base_vaddr,
         bool auto_insert_carriage_return
 ) {
+    /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
+     * where all relevant ring buffers are located. */
+    ring_init(
+            &serial_driver->tx_ring_buf_handle,
+            (ring_buffer_t *) tx_avail_ring_buf,
+            (ring_buffer_t *) tx_used_ring_buf,
+            NULL, /* "An optional function pointer to signal the other
+            component" according to README. */
+            0 /* The purpose of this is to initialise read/write indices. We set
+            this param to 0 since the `serial_client` PD sets this to 1. Only
+            one side of the shared memory region needs to do this as per the
+            README. */
+    );
+    /* Initialise the UART device. */
     bool is_success = imx_uart_init(
             &serial_driver->imx_uart,
             imx_uart_base_vaddr,
@@ -61,6 +75,7 @@ void init(void) {
 //    sel4cp_dbg_puts("\n=== START ===\n");
 //    sel4cp_dbg_puts("Initialising UART device...\n");
     serial_driver_t *serial_driver = &global_serial_driver; /* Local reference to global serial driver for our convenience. */
+    /* Initialise our `global_serial_driver` struct. */
     int ret_serial_driver_init = serial_driver_init(
             serial_driver,
             uart_base_vaddr,
@@ -105,16 +120,43 @@ void notified(sel4cp_channel channel) {
         }
         /* This is triggered when `serial_client` wants to `printf` something. */
         case SERIAL_DRIVER_TO_SERIAL_CLIENT_CHANNEL: {
-            int curr_idx = 0;
-            /* Keep looping and printing out the characters until you hit a NULL terminator. */
-            while (((char *) serial_to_client_transmit_buf)[curr_idx] != '\0') {
-                /* Print the character out to the terminal. */
-                serial_driver_put_char(
-                        serial_driver,
-                        ((char *) serial_to_client_transmit_buf)[curr_idx]
-                );
-                curr_idx++;
+            /* The dequeued buffer's address will be stored in `buf_addr`. */
+            uintptr_t buf_addr = 0;
+            /* The dequeued buffer's length will be stored in `buf_len`. */
+            unsigned int buf_len = 0;
+            /* We don't use the `cookie` but the `driver_dequeue` function call requires
+             * a valid pointer for the `cookie` param, so we provide one to it anyway. */
+            void *unused_cookie = NULL;
+            /* Keep de-queuing words until there are no words left in the transmit-used queue.
+             * TODO: Double-check if this while-loop is necessary. */
+            while (driver_dequeue(
+                    serial_driver->tx_ring_buf_handle.used_ring,
+                    &buf_addr,
+                    &buf_len,
+                    &unused_cookie
+            ) == 0) {
+                int curr_idx = 0;
+                /* Keep looping and printing out each character of each word
+                 * until you hit a NULL terminator. */
+                while (((char *) buf_addr)[curr_idx] != '\0') {
+                    /* Print the character out to the terminal. */
+                    serial_driver_put_char(
+                            serial_driver,
+                            ((char *) buf_addr)[curr_idx]
+                    );
+                    curr_idx++;
+                }
             }
+//            int curr_idx = 0;
+//            /* Keep looping and printing out the characters until you hit a NULL terminator. */
+//            while (((char *) serial_to_client_transmit_buf)[curr_idx] != '\0') {
+//                /* Print the character out to the terminal. */
+//                serial_driver_put_char(
+//                        serial_driver,
+//                        ((char *) serial_to_client_transmit_buf)[curr_idx]
+//                );
+//                curr_idx++;
+//            }
             /* Note, we deliberately do NOT print out the NULL terminator. */
             return;
         }
