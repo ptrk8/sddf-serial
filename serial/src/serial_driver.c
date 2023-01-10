@@ -70,7 +70,7 @@ void init(void) {
             true
     );
     if (ret_serial_driver_init < 0) {
-        sel4cp_dbg_puts("UART device initialisation FAILED.\n");
+        sel4cp_dbg_puts("Serial Driver initialisation FAILED.\n");
         return;
     }
 }

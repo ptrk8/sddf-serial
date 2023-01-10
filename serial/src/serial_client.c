@@ -22,23 +22,14 @@ static void serial_client_printf(char *str);
  */
 static void serial_client_notify_serial_driver();
 
-static void serial_client_notify_serial_driver() {
-    sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_CHANNEL);
-}
-
-//int printf(const char *format, ...) {
-//
-//    /* Declare a va_list type variable */
-//    va_list arguments;
-//    /* Initialise the va_list variable with the ... after fmt */
-//    va_start(arguments, format);
-//
-//    return 0;
-//}
-//
-//int getchar(void) {
-//    return 0;
-//}
+/**
+ * Initialises the `serial_client` struct and sets up the serial client.
+ * @param serial_client
+ * @return 0 for success and -1 for error.
+ */
+static int serial_client_init(
+        serial_client_t *serial_client
+);
 
 static void serial_client_printf(char *str) {
     /* Local reference to global serial_client for convenience. */
@@ -105,9 +96,13 @@ static void serial_client_printf(char *str) {
     serial_client_notify_serial_driver();
 }
 
-void init(void) {
-    /* Local reference to global serial_client for convenience. */
-    serial_client_t *serial_client = &global_serial_client;
+static void serial_client_notify_serial_driver() {
+    sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_CHANNEL);
+}
+
+static int serial_client_init(
+        serial_client_t *serial_client
+) {
     /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
      * where all relevant ring buffers are located. */
     ring_init(
@@ -128,10 +123,23 @@ void init(void) {
         );
         if (ret_enqueue_avail < 0) {
             sel4cp_dbg_puts("Failed to enqueue buffer onto available queue.\n");
-            return;
+            return -1;
         }
     }
+    return 0;
+}
 
+
+void init(void) {
+    /* Local reference to global serial_client for convenience. */
+    serial_client_t *serial_client = &global_serial_client;
+    /* Initialise serial_client. */
+    int ret_serial_client_init = serial_client_init(serial_client);
+    if (ret_serial_client_init < 0) {
+        sel4cp_dbg_puts("Serial Client initialisation FAILED.\n");
+        return;
+    }
+    /* Basic E2E tests for printf. */
     serial_client_printf("\n=== START ===\n");
     serial_client_printf("Initialising UART device...\n");
     serial_client_printf("UART device initialisation SUCCESS.\n");
