@@ -29,6 +29,11 @@ LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
 SEL4CP_TOOL ?= $(SEL4CP_SDK)/bin/sel4cp
 
+# Specifies where the source files are.
+SRC_DIR := src
+# Specifies where the ring buffer files are.
+SHARED_RING_BUFFER_DIR := $(SRC_DIR)/libsharedringbuffer
+
 BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
 IMAGES := serial_driver.elf \
@@ -40,8 +45,10 @@ LIBS := -lsel4cp -Tsel4cp.ld -lc
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 
-CFLAGS += -I$(BOARD_DIR)/include \
-	-Iinclude
+CFLAGS += \
+	-I$(BOARD_DIR)/include \
+	-Iinclude \
+	-I$(SHARED_RING_BUFFER_DIR)/include \
 
 # Specifies which Object files in $(BUILD_DIR) should be linked.
 SERIAL_DRIVER_OBJS := serial_driver.o \
@@ -50,10 +57,9 @@ SERIAL_DRIVER_OBJS := serial_driver.o \
 				serial_parity.o \
 				bit.o \
 
-SERIAL_CLIENT_OBJS := serial_client.o
-
-# Specifies where the source files are.
-SRC_DIR := src
+SERIAL_CLIENT_OBJS := \
+	serial_client.o \
+	libsharedringbuffer/shared_ringbuffer.o
 
 .PHONY: all
 all: directories $(IMAGE_FILE)
@@ -61,6 +67,7 @@ all: directories $(IMAGE_FILE)
 # Create build directory
 directories:
 	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/libsharedringbuffer
 
 # ======================================
 # Step 1: Generate $(BUILD_DIR)/%.o object files from $(SRC_DIR)/%.c source

@@ -1,8 +1,15 @@
 
 #include "serial_client.h"
 
-/* This is the buffer we write to and `serial_driver` reads from. */
+/* This is the shared buffer we write to and the `serial_driver` PD reads from.
+ * */
 uintptr_t serial_to_client_transmit_buf;
+
+uintptr_t tx_avail_ring_buf;
+uintptr_t tx_used_ring_buf;
+
+/* Global serial client. */
+serial_client_t global_serial_client = {0};
 
 /**
  * Prints a string.
@@ -50,6 +57,10 @@ static void serial_client_printf(char *str) {
 }
 
 void init(void) {
+    serial_client_t *serial_client = &global_serial_client;
+
+//    ring_init();
+
     serial_client_printf("\n=== START ===\n");
     serial_client_printf("Initialising UART device...\n");
     serial_client_printf("UART device initialisation SUCCESS.\n");

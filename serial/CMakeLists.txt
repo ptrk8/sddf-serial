@@ -9,6 +9,17 @@ project(serial C)
 #
 #set(GCC_COMPILE_FLAGS "-Wall -Werror -Wvla")
 
+add_library(serial_lib_fence INTERFACE)
+target_include_directories(serial_lib_fence INTERFACE include/)
+
+add_library(serial_lib_shared_ringbuffer src/libsharedringbuffer/shared_ringbuffer.c)
+target_include_directories(serial_lib_shared_ringbuffer PUBLIC src/libsharedringbuffer/include/)
+target_link_libraries(
+        serial_lib_shared_ringbuffer
+        lib_sel4cp_imx8mm
+        serial_lib_fence
+)
+
 add_library(lib_bit src/bit.c)
 target_include_directories(lib_bit PUBLIC include/)
 
@@ -45,6 +56,7 @@ target_include_directories(lib_serial_client PUBLIC include/)
 target_link_libraries(
         lib_serial_client
         lib_sel4cp_imx8mm
+        serial_lib_shared_ringbuffer
 )
 
 
