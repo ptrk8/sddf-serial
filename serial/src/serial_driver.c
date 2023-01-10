@@ -126,6 +126,18 @@ void notified(sel4cp_channel channel) {
                     curr_idx++;
                 }
                 /* Note, we deliberately do NOT print out the NULL terminator. */
+                /* Return buffer back to the transmit-avail queue for the
+                 * `serial_client` PD to use. */
+                int ret_enqueue_avail = enqueue_avail(
+                        &serial_driver->tx_ring_buf_handle,
+                        buf_addr,
+                        buf_len, /* TODO: Test what happens if you give back a buffer that is smaller than the original. */
+                        NULL
+                );
+                if (ret_enqueue_avail < 0) {
+                    sel4cp_dbg_puts("Failed to enqueue buffer onto available queue in notified().\n");
+                    return;
+                }
             }
             return;
         }
