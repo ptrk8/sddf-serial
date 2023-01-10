@@ -68,7 +68,7 @@ static void serial_client_printf(char *str) {
      * `shared_dma` memory region will contain the latest data we have just
      * written. */
     int ret_vspace_clean = seL4_ARM_VSpace_Clean_Data(
-            3, /* */
+            3, /* The capability to every PD's VSpace. */
             buf_addr,
             buf_addr + str_len
     );
@@ -76,6 +76,18 @@ static void serial_client_printf(char *str) {
         sel4cp_dbg_puts("Failed to clean cache in serial_client_printf().\n");
         return;
     }
+    /* If the Transmit-Used ring was empty prior to us enqueuing our new used
+     * buffer to the Transmit-Used ring (done in the following step), then we
+     * know the `serial_driver` PD was NOT preempted while working on the
+     * Transmit-Used ring. Therefore, after we enqueue our buffer to the
+     * Transmit-Used buffer, we need to notify the `serial_driver` PD.
+     * Conversely, if the Transmit-Used ring was NOT empty, then we know the
+     * `serial_driver` PD was preempted while doing work on the Transmit-Used
+     * ring. Therefore, we can save the kernel an unnecessary system call by NOT
+     * notifying the `serial_driver` PD since the kernel will resume the
+     * `serial_driver` PD (e.g. once its budget is refilled). This optimisation
+     * is handled by the if(tx_used_was_empty) check later in this function. */
+    bool tx_used_was_empty = ring_empty(serial_client->tx_ring_buf_handle.used_ring);
     /* Enqueue our dequeued (and now updated) available buffer into the used
      * transmit queue. Now the `serial_driver` PD will be able to access our
      * buffer by de-queuing from this used transmit queue. */
@@ -89,11 +101,23 @@ static void serial_client_printf(char *str) {
         sel4cp_dbg_puts("Transmit used ring is full in serial_client_printf().\n");
         return;
     }
-    /* Notify the `serial_driver`. Since, we have a lower priority than the
-     * `serial_driver`, we will be pre-empted after the call to
-     * `sel4cp_notify()` until the `serial_driver` has finished printing
-     * characters to the screen. */
-    serial_client_notify_serial_driver();
+    /* As explained above, we only notify the `serial_driver` PD if the
+     * Transmit-Used buffer was empty, which we know is when the PD was NOT
+     * doing `printf` work for us. In our current setup, this optimisation is
+     * unnecessary because our PD has a lower priority than the `serial_driver`
+     * PD, meaning the `serial_driver` PD can never be preempted i.e. the
+     * `serial_driver` PD will always clear all the buffers in the Transmit-Used
+     * ring before we are allowed to run. However, this optimisation becomes
+     * necessary if we eventually decide to ascribe a scheduling "budget" and
+     * "period" to the higher-priority `serial_driver` PD (which is the case for
+     * the ethernet driver), which would allow the `serial_driver` PD to be
+     * preempted by us (leading to several buffers left in the Transmit-Used
+     * buffer for the `serial_driver` PD to resume processing once its
+     * scheduling budget is refilled at some later time). */
+    if (tx_used_was_empty) {
+        /* Notify the `serial_driver`. */
+        serial_client_notify_serial_driver();
+    }
 }
 
 static void serial_client_notify_serial_driver() {
