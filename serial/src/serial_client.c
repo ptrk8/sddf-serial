@@ -23,8 +23,15 @@ static int serial_client_init(
 /**
  * Prints a string.
  * @param str
+ * @return -1 for error, otherwise returns the number of characters printed to the terminal.
  */
-static void serial_client_printf(char *str);
+static int serial_client_printf(char *str);
+
+/**
+ * Gets character from `stdin`.
+ * @return
+ */
+static int serial_client_getchar();
 
 /**
  * Notifies the `serial_driver` PD.
@@ -60,7 +67,7 @@ static int serial_client_init(
     return 0;
 }
 
-static void serial_client_printf(char *str) {
+static int serial_client_printf(char *str) {
     /* Local reference to global serial_client for convenience. */
     serial_client_t *serial_client = &global_serial_client;
     /* The dequeued buffer's address will be stored in `buf_addr`. */
@@ -79,13 +86,13 @@ static void serial_client_printf(char *str) {
     );
     if (ret_dequeue_avail < 0) {
         sel4cp_dbg_puts("Failed to dequeue buffer from available queue in serial_client_printf().\n");
-        return;
+        return -1;
     }
     /* Length of string including the NULL terminator. */
     size_t str_len = strlen(str) + 1;
     if (str_len > BUF_SIZE) {
         /* TODO: Allocate multiple buffers for strings larger than BUF_SIZE. */
-        return;
+        return -1;
     }
     /* Copy the string (including the NULL terminator) into
      * `buf_addr` to update our dequeued available buffer. */
@@ -107,7 +114,7 @@ static void serial_client_printf(char *str) {
     );
     if (ret_vspace_clean) {
         sel4cp_dbg_puts("Failed to clean cache in serial_client_printf().\n");
-        return;
+        return -1;
     }
     /* If the Transmit-Used ring was empty prior to us enqueuing our new used
      * buffer to the Transmit-Used ring (done in the following step), then we
@@ -132,7 +139,7 @@ static void serial_client_printf(char *str) {
     );
     if (ret_enqueue_used < 0) {
         sel4cp_dbg_puts("Transmit used ring is full in serial_client_printf().\n");
-        return;
+        return -1;
     }
     /* As explained above, we only notify the `serial_driver` PD if the
      * Transmit-Used buffer was empty, which we know is when the PD was NOT
@@ -152,6 +159,11 @@ static void serial_client_printf(char *str) {
         /* Notify the `serial_driver`. */
         serial_client_notify_serial_driver();
     }
+    return (int) strlen(str); /* Return the length of the string excluding the NULL terminator. */
+}
+
+static int serial_client_getchar() {
+
 }
 
 static void serial_client_notify_serial_driver() {
@@ -180,6 +192,8 @@ void init(void) {
     serial_client_printf("\n");
     serial_client_printf("Ending UART test...\n");
     serial_client_printf("=== END ===\n");
+//
+//    char ch = serial_client_getchar();
 }
 
 seL4_MessageInfo_t protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
