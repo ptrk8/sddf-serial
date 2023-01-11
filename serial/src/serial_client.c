@@ -89,10 +89,9 @@ static int serial_client_init(
         int ret_enqueue_avail = enqueue_avail(
                 &serial_client->rx_ring_buf_handle, /* Enqueuing Receive buffers
                 onto the Receive buffer handle. */
-                /* Enqueue */
                 shared_dma + (BUF_SIZE * (i + NUM_BUFFERS)), /* Note that we are
-                using the buffers in the data region after the ones we used for
-                the Transmit side earlier. */
+                using the buffers in the data region located after the ones we
+                used for the Transmit side earlier. */
                 BUF_SIZE,
                 NULL
         );
@@ -283,11 +282,13 @@ void init(void) {
     serial_client_printf("Ending UART test...\n");
     serial_client_printf("=== END ===\n");
 
-    char ch_as_str[2] = {0};
-    ch_as_str[0] = (char) serial_client_getchar(serial_client);
-    serial_client_printf("Serial Client received the character: ");
-    serial_client_printf(ch_as_str);
-    serial_client_printf("\n");
+    for (int i = 0; i < 2; i++) {
+        char ch_as_str[2] = {0};
+        ch_as_str[0] = (char) serial_client_getchar(serial_client);
+        serial_client_printf("Serial Client received the character: ");
+        serial_client_printf(ch_as_str);
+        serial_client_printf("\n");
+    }
 }
 
 seL4_MessageInfo_t protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
