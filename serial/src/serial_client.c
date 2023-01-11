@@ -246,7 +246,7 @@ static int serial_client_getchar(serial_client_t *serial_client) {
         sel4cp_dbg_puts("Failed to enqueue buffer onto Receive available queue in serial_client_getchar().\n");
         return -1;
     }
-    /* We obtain the character from the buffer and return it to the user */
+    /* Return the obtained character to the user */
     return (int) ch;
 }
 
