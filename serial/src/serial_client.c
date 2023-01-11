@@ -54,6 +54,10 @@ static void serial_client_printf(char *str) {
     }
     /* Length of string including the NULL terminator. */
     size_t str_len = strlen(str) + 1;
+    if (str_len > BUF_SIZE) {
+        /* TODO: Allocate multiple buffers for strings larger than BUF_SIZE. */
+        return;
+    }
     /* Copy the string (including the NULL terminator) into
      * `buf_addr` to update our dequeued available buffer. */
     memcpy(
