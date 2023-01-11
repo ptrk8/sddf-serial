@@ -106,7 +106,11 @@ static int serial_client_printf(char *str) {
      * we need to clean the cache, which will force the contents of the cache to
      * be written back to physical memory. This ensures subsequent reads of the
      * `shared_dma` memory region will contain the latest data we have just
-     * written. */
+     * written. However, for our serial driver, this cache operation is
+     * technically unnecessary because we are simply setting the device register
+     * to the value of the character to be printed out. This cache operation
+     * would be necessary for other device drivers (e.g. block) that set device
+     * registers to an address that points to physical memory. */
     int ret_vspace_clean = seL4_ARM_VSpace_Clean_Data(
             3, /* The capability to every PD's VSpace. */
             buf_addr,
