@@ -105,8 +105,18 @@ void notified(sel4cp_channel channel) {
             /* We don't use the `cookie` but the `driver_dequeue` function call requires
              * a valid pointer for the `cookie` param, so we provide one to it anyway. */
             void *unused_cookie = NULL;
-            /* Keep de-queuing words until there are no words left in the transmit-used queue.
-             * TODO: Double-check with Lucy if this while-loop is necessary. */
+            /* The while-loop continues to de-queue words until there are no
+             * words left in the Transmit-Used queue. In our current setup (no
+             * scheduling budget or period set), this while-loop is unnecessary
+             * since this PD will never be preempted, which means there will
+             * never be more than 1 buffer in the Transmit-Used queue. However,
+             * this while-loop becomes necessary if we eventually ascribe a
+             * scheduling budget and period to this PD (which we do for the
+             * ethernet driver), which would open the possibility for this PD to
+             * be preempted before we've finished processing the buffer in the
+             * Transmit-Used queue. As such, by the time this PD is rescheduled,
+             * the lower-priority `serial_client` PD may have added a new buffer
+             * to the Transmit-Used ring. */
             while (driver_dequeue(
                     serial_driver->tx_ring_buf_handle.used_ring,
                     &buf_addr,

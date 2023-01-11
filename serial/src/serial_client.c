@@ -103,17 +103,18 @@ static void serial_client_printf(char *str) {
     }
     /* As explained above, we only notify the `serial_driver` PD if the
      * Transmit-Used buffer was empty, which we know is when the PD was NOT
-     * doing `printf` work for us. In our current setup, this optimisation is
-     * unnecessary because our PD has a lower priority than the `serial_driver`
-     * PD, meaning the `serial_driver` PD can never be preempted i.e. the
-     * `serial_driver` PD will always clear all the buffers in the Transmit-Used
-     * ring before we are allowed to run. However, this optimisation becomes
-     * necessary if we eventually decide to ascribe a scheduling "budget" and
-     * "period" to the higher-priority `serial_driver` PD (which is the case for
-     * the ethernet driver), which would allow the `serial_driver` PD to be
-     * preempted by us (leading to several buffers left in the Transmit-Used
-     * buffer for the `serial_driver` PD to resume processing once its
-     * scheduling budget is refilled at some later time). */
+     * doing `printf` work for us. In our current setup (with no scheduling
+     * budget or period set), this optimisation is unnecessary because our PD
+     * has a lower priority than the `serial_driver` PD, meaning the
+     * `serial_driver` PD can never be preempted i.e. the `serial_driver` PD
+     * will always clear all the buffers in the Transmit-Used ring before we are
+     * allowed to run. However, this optimisation becomes necessary if we
+     * eventually decide to ascribe a scheduling "budget" and "period" to the
+     * higher-priority `serial_driver` PD (which is the case for the ethernet
+     * driver), which would allow the `serial_driver` PD to be preempted by us
+     * (leading to several buffers left in the Transmit-Used buffer for the
+     * `serial_driver` PD to resume processing once its scheduling budget is
+     * refilled at some later time). */
     if (tx_used_was_empty) {
         /* Notify the `serial_driver`. */
         serial_client_notify_serial_driver();
