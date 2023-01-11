@@ -7,6 +7,10 @@ uintptr_t tx_avail_ring_buf;
 uintptr_t tx_used_ring_buf;
 /* TODO: Explain. */
 uintptr_t shared_dma;
+/* TODO: Explain. */
+uintptr_t rx_avail_ring_buf;
+/* TODO: Explain. */
+uintptr_t rx_used_ring_buf;
 
 /* Global serial client. */
 serial_client_t global_serial_client = {0};
@@ -28,8 +32,8 @@ static int serial_client_init(
 static int serial_client_printf(char *str);
 
 /**
- * Gets character from `stdin`.
- * @return
+ * Gets character from the serial driver.
+ * @return -1 for error, otherwise returns the character obtained from the serial driver.
  */
 static int serial_client_getchar();
 
@@ -42,7 +46,7 @@ static int serial_client_init(
         serial_client_t *serial_client
 ) {
     /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
-     * where all relevant ring buffers are located. */
+     * where all relevant Transmit ring buffers are located. */
     ring_init(
             &serial_client->tx_ring_buf_handle,
             (ring_buffer_t *) tx_avail_ring_buf,
@@ -60,7 +64,34 @@ static int serial_client_init(
                 NULL
         );
         if (ret_enqueue_avail < 0) {
-            sel4cp_dbg_puts("Failed to enqueue buffer onto available queue.\n");
+            sel4cp_dbg_puts("Failed to enqueue buffer onto Transmit available queue in serial_client_init().\n");
+            return -1;
+        }
+    }
+    /* Initialise our `rx_ring_buf_handle`, which is just a convenience struct
+     * where all relevant Receive ring buffers are located. */
+    ring_init(
+            &serial_client->rx_ring_buf_handle,
+            (ring_buffer_t *) rx_avail_ring_buf,
+            (ring_buffer_t *) rx_used_ring_buf,
+            NULL,
+            1
+    );
+    /* Populate the available ring buffer with empty buffers from `shared_dma`
+     * memory region. */
+    for (int i = 0; i < NUM_BUFFERS - 1; i++) {
+        int ret_enqueue_avail = enqueue_avail(
+                &serial_client->rx_ring_buf_handle, /* Enqueuing Receive buffers
+                onto the Receive buffer handle. */
+                /* Enqueue */
+                shared_dma + (BUF_SIZE * (i + NUM_BUFFERS)), /* Note that we are
+                using the buffers in the data region after the ones we used for
+                the Transmit side earlier. */
+                BUF_SIZE,
+                NULL
+        );
+        if (ret_enqueue_avail < 0) {
+            sel4cp_dbg_puts("Failed to enqueue buffer onto Receive available queue in serial_client_init().\n");
             return -1;
         }
     }
@@ -167,7 +198,7 @@ static int serial_client_printf(char *str) {
 }
 
 static int serial_client_getchar() {
-
+    return 0;
 }
 
 static void serial_client_notify_serial_driver() {
@@ -196,8 +227,12 @@ void init(void) {
     serial_client_printf("\n");
     serial_client_printf("Ending UART test...\n");
     serial_client_printf("=== END ===\n");
-//
-//    char ch = serial_client_getchar();
+
+    char ch_as_str[2] = {0};
+    ch_as_str[0] = (char) serial_client_getchar();
+    serial_client_printf("Serial Client received the character: ");
+    serial_client_printf(ch_as_str);
+    serial_client_printf("\n");
 }
 
 seL4_MessageInfo_t protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {

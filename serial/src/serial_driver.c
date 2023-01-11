@@ -10,6 +10,10 @@ uintptr_t tx_avail_ring_buf;
 uintptr_t tx_used_ring_buf;
 /* TODO: Explain. */
 uintptr_t shared_dma;
+/* TODO: Explain. */
+uintptr_t rx_avail_ring_buf;
+/* TODO: Explain. */
+uintptr_t rx_used_ring_buf;
 
 serial_driver_t global_serial_driver = {};
 
@@ -32,7 +36,7 @@ static int serial_driver_init(
         bool auto_insert_carriage_return
 ) {
     /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
-     * where all relevant ring buffers are located. */
+     * where all relevant transmit ring buffers are located. */
     ring_init(
             &serial_driver->tx_ring_buf_handle,
             (ring_buffer_t *) tx_avail_ring_buf,
@@ -90,6 +94,7 @@ void notified(sel4cp_channel channel) {
             /* If the character is not erroneous, we send the character to the
              * UART device to output to the console. */
             if (c != -1) {
+                /* This will output the character to the console. */
                 serial_driver_put_char(serial_driver, c);
             }
             /* Acknowledge receipt of the interrupt. */

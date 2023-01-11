@@ -14,9 +14,13 @@
 
 typedef struct serial_client serial_client_t;
 struct serial_client {
-    /* Transaction ring buffer handle. This is a convenience `struct` that
-     * contains all the pointers to the relevant "available" and "used" buffers. */
+    /* Transmit ring buffer handle. This is a convenience `struct` that contains
+     * all the pointers to the relevant Transmit "available" and "used" buffers.
+     * */
     ring_handle_t tx_ring_buf_handle;
+    /* Receive ring buffer handle. This is a convenience `struct` that contains
+     * all the pointers to the relevant Receive "available" and "used" buffers. */
+    ring_handle_t rx_ring_buf_handle;
 };
 
 

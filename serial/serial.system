@@ -21,6 +21,16 @@
             name="shared_dma"
             size="0x200_000"
             page_size="0x200_000"/>
+    <!--TODO: Explain -->
+    <memory_region
+            name="rx_avail_ring_buf"
+            size="0x200_000"
+            page_size="0x200_000"/>
+    <!--TODO: Explain -->
+    <memory_region
+            name="rx_used_ring_buf"
+            size="0x200_000"
+            page_size="0x200_000"/>
     <!-- The `serial_driver` PD must have a higher priority than the
     `serial_client` PD so that it doesn't get preempted by `serial_client` when
     it is busy writing to the UART device. -->
@@ -65,6 +75,20 @@
                 perms="rw"
                 cached="true"
                 setvar_vaddr="shared_dma" />
+        <!--TODO: Explain. -->
+        <map
+                mr="rx_avail_ring_buf"
+                vaddr="0x7_400_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="rx_avail_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="rx_used_ring_buf"
+                vaddr="0x7_600_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="rx_used_ring_buf"/>
     </protection_domain>
     <!-- The `serial_client` PD must have a lower priority than the
     `serial_driver` PD so that it doesn't preempt `serial_client` when it is
@@ -95,6 +119,20 @@
                 perms="rw"
                 cached="true"
                 setvar_vaddr="shared_dma" />
+        <!--TODO: Explain. -->
+        <map
+                mr="rx_avail_ring_buf"
+                vaddr="0x6_400_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="rx_avail_ring_buf"/>
+        <!--TODO: Explain. -->
+        <map
+                mr="rx_used_ring_buf"
+                vaddr="0x6_600_000"
+                perms="rw"
+                cached="true"
+                setvar_vaddr="rx_used_ring_buf"/>
     </protection_domain>
     <!-- Channel between `serial_client` and `serial_driver`. -->
     <channel>
