@@ -29,6 +29,8 @@ endfunction(add_google_test)
 
 
 add_executable(test_bit test_bit.cpp)
+add_executable(test_serial_client test_serial_client.cpp)
 
 add_google_test(test_bit lib_bit)
+add_google_test(test_serial_client lib_serial_client)
 
