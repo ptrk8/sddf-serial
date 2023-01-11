@@ -235,7 +235,8 @@ static int serial_client_getchar(serial_client_t *serial_client) {
     }
     /* We save the character into a temporary variable. */
     char ch = *((char *) buf_addr);
-    /* Now we enqueue our free buffer onto the Receive-Available queue. */
+    /* Now we can enqueue our free buffer onto the Receive-Available queue to be
+     * used by another `getchar()` call. */
     int ret_enqueue_avail = enqueue_avail(
             &serial_client->rx_ring_buf_handle,
             buf_addr,
@@ -246,7 +247,7 @@ static int serial_client_getchar(serial_client_t *serial_client) {
         sel4cp_dbg_puts("Failed to enqueue buffer onto Receive available queue in serial_client_getchar().\n");
         return -1;
     }
-    /* Return the obtained character to the user */
+    /* Return the obtained character to the caller */
     return (int) ch;
 }
 
