@@ -19,4 +19,23 @@ struct serial_client {
     ring_handle_t tx_ring_buf_handle;
 };
 
+/**
+ * Converts a format string into a normal string and saves it in the `str` buffer.
+ * @param str Buffer to save the formatted string into.
+ * @param maxlen Length of the `str` buffer.
+ * @param format Format string.
+ * @param args Arguments for the format string.
+ * @return -1 if error and the number of characters written to `str` excluding
+ * NULL terminator otherwise.
+ */
+static int serial_client_vsnprintf(
+        char *str,
+        size_t maxlen,
+        const char *format,
+        va_list args
+);
+
+//extern int vsnprintf (char *__restrict __s, size_t __maxlen,
+//                      const char *__restrict __format, _G_va_list __arg)
+//__THROWNL __attribute__ ((__format__ (__printf__, 3, 0)));
 

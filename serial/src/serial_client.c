@@ -22,10 +22,11 @@ static int serial_client_init(
 
 /**
  * Prints a string.
- * @param str
+ * @param format Format string.
+ * @param ... Variadic arguments accompanying format string.
  * @return -1 for error, otherwise returns the number of characters printed to the terminal.
  */
-static int serial_client_printf(char *str);
+static int serial_client_printf(const char *format, ...);
 
 /**
  * Gets character from `stdin`.
@@ -67,7 +68,23 @@ static int serial_client_init(
     return 0;
 }
 
-static int serial_client_printf(char *str) {
+int serial_client_vsnprintf(
+        char *str,
+        size_t maxlen,
+        const char *format,
+        va_list args
+) {
+    if (str == NULL || format == NULL) {
+        return -1;
+    }
+
+}
+
+static int serial_client_printf(const char *format, ...) {
+    /* Return -1 if format string is NULL. */
+    if (format == NULL) {
+        return -1;
+    }
     /* Local reference to global serial_client for convenience. */
     serial_client_t *serial_client = &global_serial_client;
     /* The dequeued buffer's address will be stored in `buf_addr`. */
@@ -88,6 +105,14 @@ static int serial_client_printf(char *str) {
         sel4cp_dbg_puts("Failed to dequeue buffer from available queue in serial_client_printf().\n");
         return -1;
     }
+    /* Declare a `va_list` args variable */
+    va_list args;
+    /* Initialise the va_list variable with the ... after fmt */
+    va_start(args, format);
+    /* Buffer to store the string.*/
+    char str[BUF_SIZE * NUM_BUFFERS] = {0};
+    /* Obtain the un-formatted version of the format string and place it in `str`. */
+    serial_client_vsnprintf(str, BUF_SIZE * NUM_BUFFERS, format, args);
     /* Length of string including the NULL terminator. */
     size_t str_len = strlen(str) + 1;
     if (str_len > BUF_SIZE) {
