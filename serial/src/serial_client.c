@@ -32,15 +32,21 @@ static int serial_client_init(
 static int serial_client_printf(char *str);
 
 /**
- * Gets character from the serial driver.
+ * Gets a character from the serial driver.
+ * @param serial_client
  * @return -1 for error, otherwise returns the character obtained from the serial driver.
  */
-static int serial_client_getchar();
+static int serial_client_getchar(serial_client_t *serial_client);
 
 /**
- * Notifies the `serial_driver` PD.
+ * Notifies the `serial_driver` PD that there is a `printf()` call.
  */
-static void serial_client_notify_serial_driver();
+static void serial_client_notify_serial_driver_printf();
+
+/**
+ * Notifies the `serial_driver` PD that there is a `getchar()` call.
+ */
+static void serial_client_notify_serial_driver_getchar();
 
 static int serial_client_init(
         serial_client_t *serial_client
@@ -192,17 +198,50 @@ static int serial_client_printf(char *str) {
      * refilled at some later time). */
     if (tx_used_was_empty) {
         /* Notify the `serial_driver`. */
-        serial_client_notify_serial_driver();
+        serial_client_notify_serial_driver_printf();
     }
     return (int) strlen(str); /* Return the length of the string excluding the NULL terminator. */
 }
 
-static int serial_client_getchar() {
-    return 0;
+static int serial_client_getchar(serial_client_t *serial_client) {
+    /* Notify the `serial_driver` PD that we wish to obtain a character. */
+    serial_client_notify_serial_driver_getchar();
+    return 'A';
+//    /* The dequeued buffer's address will be stored in `buf_addr`. */
+//    uintptr_t buf_addr = 0;
+//    /* The dequeued buffer's length will be stored in `buf_len`. */
+//    unsigned int buf_len = 0;
+//    /* We don't use the `cookie` but the `dequeue_used` function call requires
+//     * a valid pointer for the `cookie` param, so we provide one to it anyway. */
+//    void *unused_cookie = NULL;
+//    /* Block here until we're able to obtain a character from the Receive Used ring. */
+//    while (dequeue_used(
+//            &serial_client->rx_ring_buf_handle,
+//            &buf_addr,
+//            &buf_len,
+//            &unused_cookie
+//    ) != 0) {
+//        /* Keep spinning while there is nothing in the Receive-Used ring. There
+//         * will be nothing in the Receive-Used ring if the user has yet to enter
+//         * a character into the console. Blocking here while there is no user
+//         * input is the expected behaviour of `getchar`. */
+//    }
+//    /* We only reach this point when there is a successful dequeue, which means
+//     * `buf_addr` and `buf_len` are populated with valid values. */
+//    if (buf_len != 1) {
+//        sel4cp_dbg_puts("Illegal State Exception: The buffer should only contain a single character and therefore should have length 1.");
+//        return -1;
+//    }
+//    /* We obtain the character from the buffer and return it to the user */
+//    return (int) *((char *)buf_addr);
 }
 
-static void serial_client_notify_serial_driver() {
-    sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_CHANNEL);
+static void serial_client_notify_serial_driver_printf() {
+    sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_PRINTF_CHANNEL);
+}
+
+static void serial_client_notify_serial_driver_getchar() {
+    sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_GETCHAR_CHANNEL);
 }
 
 void init(void) {
@@ -229,7 +268,7 @@ void init(void) {
     serial_client_printf("=== END ===\n");
 
     char ch_as_str[2] = {0};
-    ch_as_str[0] = (char) serial_client_getchar();
+    ch_as_str[0] = (char) serial_client_getchar(serial_client);
     serial_client_printf("Serial Client received the character: ");
     serial_client_printf(ch_as_str);
     serial_client_printf("\n");

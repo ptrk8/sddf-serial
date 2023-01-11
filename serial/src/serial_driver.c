@@ -36,6 +36,19 @@ static int serial_driver_init(
  * @param ch
  */
 static void serial_driver_put_char(serial_driver_t *serial_driver, int ch);
+
+/**
+ * Increments `num_chars_for_client`.
+ * @param serial_driver
+ */
+static void serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver);
+
+/**
+ * Decrements `num_chars_for_client`.
+ * @param serial_driver
+ */
+static void serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver);
+
 static int serial_driver_init(
         serial_driver_t *serial_driver,
         uintptr_t imx_uart_base_vaddr,
@@ -84,6 +97,25 @@ static void serial_driver_put_char(serial_driver_t *serial_driver, int ch) {
     while (imx_uart_put_char(&serial_driver->imx_uart, ch) < 0);
 }
 
+static void serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver) {
+    if (serial_driver == NULL) {
+        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_inc_num_chars_for_client().");
+        return;
+    }
+    serial_driver->num_chars_for_client++;
+}
+
+static void serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver) {
+    if (serial_driver == NULL) {
+        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_dec_num_chars_for_client().");
+        return;
+    }
+    serial_driver->num_chars_for_client--;
+    if (serial_driver->num_chars_for_client < 0) {
+        sel4cp_dbg_puts("Illegal State Exception: Decrementing num_chars_for_client below 0.");
+    }
+}
+
 void init(void) {
     serial_driver_t *serial_driver = &global_serial_driver; /* Local reference to global serial driver for our convenience. */
     /* Initialise our `global_serial_driver` struct. */
@@ -115,13 +147,30 @@ void notified(sel4cp_channel channel) {
             if (c != -1) {
                 /* This will output the character to the console. */
                 serial_driver_put_char(serial_driver, c);
+
+//                /* We will then */
+//
+//                /* The dequeued buffer's address will be stored in `buf_addr`. */
+//                uintptr_t buf_addr;
+//                /* The dequeued buffer's length will be stored in `buf_len`. */
+//                unsigned int buf_len;
+//                /* We don't use the `cookie` but the `dequeue_avail` function call requires
+//                 * a valid pointer for the `cookie` param, so we provide one to it anyway. */
+//                void *unused_cookie;
+//                /* Dequeue an available buffer. */
+//                int ret_dequeue_avail = dequeue_avail(
+//                        &serial_client->tx_ring_buf_handle,
+//                        &buf_addr,
+//                        &buf_len,
+//                        &unused_cookie
+//                );
             }
             /* Acknowledge receipt of the interrupt. */
             sel4cp_irq_ack(channel);
             return;
         }
         /* This is triggered when `serial_client` wants to `printf` something. */
-        case SERIAL_DRIVER_TO_SERIAL_CLIENT_CHANNEL: {
+        case SERIAL_DRIVER_TO_SERIAL_CLIENT_PRINTF_CHANNEL: {
             /* The dequeued buffer's address will be stored in `buf_addr`. */
             uintptr_t buf_addr = 0;
             /* The dequeued buffer's length will be stored in `buf_len`. */
@@ -174,6 +223,13 @@ void notified(sel4cp_channel channel) {
                 }
             }
             return;
+        }
+        /* This is triggered when the `serial_client` PD calls `getchar()`. */
+        case SERIAL_DRIVER_TO_SERIAL_CLIENT_GETCHAR_CHANNEL: {
+            /* Increment the number of characters to retrieve for a client. */
+            serial_driver_inc_num_chars_for_client(serial_driver);
+            sel4cp_dbg_puts("Notification reached here!");
+            break;
         }
         default:
             sel4cp_dbg_puts("Serial driver: received notification on unexpected channel\n");

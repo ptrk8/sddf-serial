@@ -134,10 +134,17 @@
                 cached="true"
                 setvar_vaddr="rx_used_ring_buf"/>
     </protection_domain>
-    <!-- Channel between `serial_client` and `serial_driver`. -->
+    <!-- Channel between `serial_client` and `serial_driver` for printf() calls
+    by `serial_client`. -->
     <channel>
         <end pd="serial_client" id="3" />
         <end pd="serial_driver" id="4" />
+    </channel>
+    <!-- Channel between `serial_client` and `serial_driver` for getchar() calls
+    by `serial_client`. -->
+    <channel>
+        <end pd="serial_client" id="5" />
+        <end pd="serial_driver" id="6" />
     </channel>
 </system>
 
