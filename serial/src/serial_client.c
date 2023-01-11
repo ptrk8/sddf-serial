@@ -12,6 +12,15 @@ uintptr_t shared_dma;
 serial_client_t global_serial_client = {0};
 
 /**
+ * Initialises the `serial_client` struct and sets up the serial client.
+ * @param serial_client
+ * @return 0 for success and -1 for error.
+ */
+static int serial_client_init(
+        serial_client_t *serial_client
+);
+
+/**
  * Prints a string.
  * @param str
  */
@@ -22,14 +31,34 @@ static void serial_client_printf(char *str);
  */
 static void serial_client_notify_serial_driver();
 
-/**
- * Initialises the `serial_client` struct and sets up the serial client.
- * @param serial_client
- * @return 0 for success and -1 for error.
- */
 static int serial_client_init(
         serial_client_t *serial_client
-);
+) {
+    /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
+     * where all relevant ring buffers are located. */
+    ring_init(
+            &serial_client->tx_ring_buf_handle,
+            (ring_buffer_t *) tx_avail_ring_buf,
+            (ring_buffer_t *) tx_used_ring_buf,
+            NULL,
+            1
+    );
+    /* Populate the available ring buffer with empty buffers from `shared_dma`
+     * memory region. */
+    for (int i = 0; i < NUM_BUFFERS - 1; i++) {
+        int ret_enqueue_avail = enqueue_avail(
+                &serial_client->tx_ring_buf_handle,
+                shared_dma + (BUF_SIZE * i),
+                BUF_SIZE,
+                NULL
+        );
+        if (ret_enqueue_avail < 0) {
+            sel4cp_dbg_puts("Failed to enqueue buffer onto available queue.\n");
+            return -1;
+        }
+    }
+    return 0;
+}
 
 static void serial_client_printf(char *str) {
     /* Local reference to global serial_client for convenience. */
@@ -128,36 +157,6 @@ static void serial_client_printf(char *str) {
 static void serial_client_notify_serial_driver() {
     sel4cp_notify(SERIAL_CLIENT_TO_SERIAL_DRIVER_CHANNEL);
 }
-
-static int serial_client_init(
-        serial_client_t *serial_client
-) {
-    /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
-     * where all relevant ring buffers are located. */
-    ring_init(
-            &serial_client->tx_ring_buf_handle,
-            (ring_buffer_t *) tx_avail_ring_buf,
-            (ring_buffer_t *) tx_used_ring_buf,
-            NULL,
-            1
-    );
-    /* Populate the available ring buffer with empty buffers from `shared_dma`
-     * memory region. */
-    for (int i = 0; i < NUM_BUFFERS - 1; i++) {
-        int ret_enqueue_avail = enqueue_avail(
-                &serial_client->tx_ring_buf_handle,
-                shared_dma + (BUF_SIZE * i),
-                BUF_SIZE,
-                NULL
-        );
-        if (ret_enqueue_avail < 0) {
-            sel4cp_dbg_puts("Failed to enqueue buffer onto available queue.\n");
-            return -1;
-        }
-    }
-    return 0;
-}
-
 
 void init(void) {
     /* Local reference to global serial_client for convenience. */
