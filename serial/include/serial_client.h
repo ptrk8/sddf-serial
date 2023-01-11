@@ -8,11 +8,9 @@
 #include <string.h>
 
 #include "shared_ringbuffer.h"
+#include "shared_dma.h"
 
 #define SERIAL_CLIENT_TO_SERIAL_DRIVER_CHANNEL (3)
-
-#define NUM_BUFFERS 512
-#define BUF_SIZE 2048
 
 typedef struct serial_client serial_client_t;
 struct serial_client {

@@ -12,6 +12,9 @@ project(serial C)
 add_library(serial_lib_fence INTERFACE)
 target_include_directories(serial_lib_fence INTERFACE include/)
 
+add_library(lib_shared_dma src/shared_dma.c)
+target_include_directories(lib_shared_dma PUBLIC include/)
+
 add_library(serial_lib_shared_ringbuffer src/libsharedringbuffer/shared_ringbuffer.c)
 target_include_directories(serial_lib_shared_ringbuffer PUBLIC src/libsharedringbuffer/include/)
 target_link_libraries(
@@ -58,6 +61,7 @@ target_link_libraries(
         lib_serial_client
         lib_sel4cp_imx8mm
         serial_lib_shared_ringbuffer
+        lib_shared_dma
 )
 
 

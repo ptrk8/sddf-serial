@@ -141,7 +141,7 @@ void notified(sel4cp_channel channel) {
                 int ret_enqueue_avail = enqueue_avail(
                         &serial_driver->tx_ring_buf_handle,
                         buf_addr,
-                        buf_len, /* TODO: Test what happens if you give back a buffer that is smaller than the original. */
+                        BUF_SIZE, /* TODO: Unit test what happens if you give back a buffer that is smaller than the original. */
                         NULL
                 );
                 if (ret_enqueue_avail < 0) {

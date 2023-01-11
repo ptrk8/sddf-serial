@@ -58,10 +58,12 @@ SERIAL_DRIVER_OBJS := \
 	serial_parity.o \
 	bit.o \
 	libsharedringbuffer/shared_ringbuffer.o \
+	shared_dma.o \
 
 SERIAL_CLIENT_OBJS := \
 	serial_client.o \
-	libsharedringbuffer/shared_ringbuffer.o
+	libsharedringbuffer/shared_ringbuffer.o \
+	shared_dma.o \
 
 .PHONY: all
 all: directories $(IMAGE_FILE)

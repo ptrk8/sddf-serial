@@ -5,6 +5,7 @@
 
 #include "imx_uart.h"
 #include "shared_ringbuffer.h"
+#include "shared_dma.h"
 
 #define IRQ_59_CHANNEL (2)
 
