@@ -232,7 +232,8 @@ void notified(sel4cp_channel channel) {
              * be preempted before we've finished processing the buffer in the
              * Transmit-Used queue. As such, by the time this PD is rescheduled,
              * the lower-priority `serial_client` PD may have added a new buffer
-             * to the Transmit-Used ring. */
+             * to the Transmit-Used ring, which we may as well just dequeue and
+             * process once we are restarted by the kernel. */
             while (driver_dequeue(
                     serial_driver->tx_ring_buf_handle.used_ring,
                     &buf_addr,
@@ -269,7 +270,16 @@ void notified(sel4cp_channel channel) {
         }
         /* This is triggered when the `serial_client` PD calls `getchar()`. */
         case SERIAL_DRIVER_TO_SERIAL_CLIENT_GETCHAR_CHANNEL: {
-            /* Increment the number of characters to retrieve for a client. */
+            /* Every time this PD receives a `getchar()` request, we increment
+             * the `num_chars_for_client` variable by 1. When
+             * `num_chars_for_client` is greater than 0, each character the UART
+             * device receives is sent back to the `serial_client` PD until
+             * there are no more characters to send back. The logic for sending
+             * back a character to the `serial_client` PD is located in the IRQ
+             * handler branch of this switch-statement. On the client's side,
+             * the `serial_client` PD should block until a character is sent
+             * back from this PD, which is the expected behaviour of
+             * `getchar()`. */
             serial_driver_inc_num_chars_for_client(serial_driver);
             break;
         }
