@@ -271,7 +271,6 @@ void notified(sel4cp_channel channel) {
         case SERIAL_DRIVER_TO_SERIAL_CLIENT_GETCHAR_CHANNEL: {
             /* Increment the number of characters to retrieve for a client. */
             serial_driver_inc_num_chars_for_client(serial_driver);
-//            sel4cp_dbg_puts("Notification reached here!");
             break;
         }
         default:
