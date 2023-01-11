@@ -36,7 +36,7 @@ static int serial_driver_init(
         bool auto_insert_carriage_return
 ) {
     /* Initialise our `tx_ring_buf_handle`, which is just a convenience struct
-     * where all relevant transmit ring buffers are located. */
+     * where all relevant Transmit ring buffers are located. */
     ring_init(
             &serial_driver->tx_ring_buf_handle,
             (ring_buffer_t *) tx_avail_ring_buf,
@@ -47,6 +47,15 @@ static int serial_driver_init(
             this param to 0 since the `serial_client` PD sets this to 1. Only
             one side of the shared memory region needs to do this as per the
             README. */
+    );
+    /* Initialise our `rx_ring_buf_handle`, which is just a convenience struct
+     * where all relevant Receive ring buffers are located. */
+    ring_init(
+            &serial_driver->rx_ring_buf_handle,
+            (ring_buffer_t *) rx_avail_ring_buf,
+            (ring_buffer_t *) rx_used_ring_buf,
+            NULL, /* Refer to earlier comment about this param. */
+            0 /* Refer to earlier comment about this param. */
     );
     /* Initialise the UART device. */
     bool is_success = imx_uart_init(
@@ -86,7 +95,7 @@ seL4_MessageInfo_t protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
 void notified(sel4cp_channel channel) {
     serial_driver_t *serial_driver = &global_serial_driver; /* Local reference to global serial driver for our convenience. */
     switch(channel) {
-        /* This is triggered when there is UART hardware interrupt (signifying a
+        /* This is triggered when there is a UART hardware interrupt (signifying a
          * new character was sent to the UART device). */
         case IRQ_59_CHANNEL: {
             /* We obtain the character for the UART device. */
