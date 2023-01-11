@@ -1,15 +1,34 @@
 
 #include "serial_client.h"
 
-/* TODO: Explain. */
-uintptr_t tx_avail_ring_buf;
-/* TODO: Explain. */
-uintptr_t tx_used_ring_buf;
-/* TODO: Explain. */
+/* In the SDDF's design-documentation, `shared_dma` is referred to as the "Data
+ * Region". `shared_dma` is an array of I/O buffers that will be used to
+ * pass/transport data from `serial_client` to `serial_driver` and vice-versa.
+ * */
 uintptr_t shared_dma;
-/* TODO: Explain. */
+
+/* `tx_` stands for "Transmit". The following two Transmit buffers are to assist
+ * with transporting data from `serial_client` to `serial_driver`. */
+
+/* In the SDDF's design-documentation, `tx_avail_ring_buf` is referred to as the
+ * "Transmit-Free" (TxF) ring buffer. `tx_avail_ring_buf` holds all the buffers
+ * in the `shared_dma` data region that are ready to be reused for transporting
+ * new data from `serial_client` to `serial_driver`. */
+uintptr_t tx_avail_ring_buf;
+/* In the SDDF's design-documentation, `tx_used_ring_buf` is referred to as the
+ * "Transmit-Available" (TxA) ring buffer. `tx_used_ring_buf` holds all the
+ * buffers in the `shared_dma` data region that currently hold data sent by
+ * `serial_client` for the `serial_driver` PD to process.  */
+uintptr_t tx_used_ring_buf;
+
+/* `rx_` stands for "Receive". The following two Receive buffers are to assist
+ * with transporting data from `serial_driver` to `serial_client`. */
+
+/* Identical purpose to `tx_avail_ring_buf` but for `serial_driver` to
+ * `serial_client`. */
 uintptr_t rx_avail_ring_buf;
-/* TODO: Explain. */
+/* Identical purpose to `tx_used_ring_buf` but for `serial_driver` to
+ * `serial_client`. */
 uintptr_t rx_used_ring_buf;
 
 /* Global serial client. */
