@@ -30,6 +30,12 @@ static int serial_driver_init(
         bool auto_insert_carriage_return
 );
 
+/**
+ * Sends character to the UART device.
+ * @param serial_driver
+ * @param ch
+ */
+static void serial_driver_put_char(serial_driver_t *serial_driver, int ch);
 static int serial_driver_init(
         serial_driver_t *serial_driver,
         uintptr_t imx_uart_base_vaddr,
@@ -69,7 +75,11 @@ static int serial_driver_init(
     return -1;
 }
 
-void serial_driver_put_char(serial_driver_t *serial_driver, int ch) {
+static void serial_driver_put_char(serial_driver_t *serial_driver, int ch) {
+    if (serial_driver == NULL) {
+        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_put_char().");
+        return;
+    }
     /* Keep trying to send the character to the UART device until it is successful. */
     while (imx_uart_put_char(&serial_driver->imx_uart, ch) < 0);
 }
