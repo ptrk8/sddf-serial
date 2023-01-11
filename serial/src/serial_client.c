@@ -59,8 +59,8 @@ static void serial_client_printf(char *str) {
     memcpy(
             (char *) buf_addr,
             str,
-            /* We define the length of a string as inclusive of its NULL terminator. */
-            str_len
+            str_len /* We define the length of a string as inclusive of its NULL
+            terminator. */
     );
     /* Since we have just written fresh data to the `shared_dma` memory region,
      * we need to clean the cache, which will force the contents of the cache to
