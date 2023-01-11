@@ -213,7 +213,8 @@ static int serial_client_getchar(serial_client_t *serial_client) {
     /* We don't use the `cookie` but the `dequeue_used` function call requires
      * a valid pointer for the `cookie` param, so we provide one to it anyway. */
     void *unused_cookie = NULL;
-    /* Block here until we're able to obtain a character from the Receive-Used ring. */
+    /* This while-loop blocks until we're able to obtain a character from the
+     * Receive-Used ring. */
     while (dequeue_used(
             &serial_client->rx_ring_buf_handle,
             &buf_addr,
