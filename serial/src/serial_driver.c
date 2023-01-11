@@ -38,16 +38,25 @@ static int serial_driver_init(
 static void serial_driver_put_char(serial_driver_t *serial_driver, int ch);
 
 /**
+ * Simple getter for `num_chars_for_client`.
+ * @param serial_driver
+ * @return The value of `num_chars_for_client` variable.
+ */
+static int serial_driver_get_num_chars_for_client(serial_driver_t *serial_driver);
+
+/**
  * Increments `num_chars_for_client`.
  * @param serial_driver
+ * @return The new value of `num_chars_for_client` or -1 for error..
  */
-static void serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver);
+static int serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver);
 
 /**
  * Decrements `num_chars_for_client`.
  * @param serial_driver
+ * @return The new value of `num_chars_for_client` or -1 for error.
  */
-static void serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver);
+static int serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver);
 
 static int serial_driver_init(
         serial_driver_t *serial_driver,
@@ -97,23 +106,36 @@ static void serial_driver_put_char(serial_driver_t *serial_driver, int ch) {
     while (imx_uart_put_char(&serial_driver->imx_uart, ch) < 0);
 }
 
-static void serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver) {
+static int serial_driver_get_num_chars_for_client(serial_driver_t *serial_driver) {
     if (serial_driver == NULL) {
-        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_inc_num_chars_for_client().");
-        return;
+        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_get_num_chars_for_client().");
+        return -1;
     }
-    serial_driver->num_chars_for_client++;
+    if (serial_driver->num_chars_for_client < 0) {
+        sel4cp_dbg_puts("Illegal State Exception: `num_chars_for_client` should not be below 0.");
+        return -1;
+    }
+    return serial_driver->num_chars_for_client;
 }
 
-static void serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver) {
+static int serial_driver_inc_num_chars_for_client(serial_driver_t *serial_driver) {
+    if (serial_driver == NULL) {
+        sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_inc_num_chars_for_client().");
+        return -1;
+    }
+    /* We return the value of the pre-increment so that we return the value of
+     * `num_chars_for_client` after it is updated. */
+    serial_driver->num_chars_for_client++;
+    return serial_driver_get_num_chars_for_client(serial_driver);
+}
+
+static int serial_driver_dec_num_chars_for_client(serial_driver_t *serial_driver) {
     if (serial_driver == NULL) {
         sel4cp_dbg_puts("Illegal Argument Exception: NULL pointer in serial_driver_dec_num_chars_for_client().");
-        return;
+        return -1;
     }
     serial_driver->num_chars_for_client--;
-    if (serial_driver->num_chars_for_client < 0) {
-        sel4cp_dbg_puts("Illegal State Exception: Decrementing num_chars_for_client below 0.");
-    }
+    return serial_driver_get_num_chars_for_client(serial_driver);
 }
 
 void init(void) {
@@ -147,27 +169,48 @@ void notified(sel4cp_channel channel) {
             if (c != -1) {
                 /* This will output the character to the console. */
                 serial_driver_put_char(serial_driver, c);
-
-//                /* We will then */
-//
-//                /* The dequeued buffer's address will be stored in `buf_addr`. */
-//                uintptr_t buf_addr;
-//                /* The dequeued buffer's length will be stored in `buf_len`. */
-//                unsigned int buf_len;
-//                /* We don't use the `cookie` but the `dequeue_avail` function call requires
-//                 * a valid pointer for the `cookie` param, so we provide one to it anyway. */
-//                void *unused_cookie;
-//                /* Dequeue an available buffer. */
-//                int ret_dequeue_avail = dequeue_avail(
-//                        &serial_client->tx_ring_buf_handle,
-//                        &buf_addr,
-//                        &buf_len,
-//                        &unused_cookie
-//                );
+                /* Keep looping until we have serviced all `getchar()` requests
+                 * from clients. */
+                while (serial_driver_get_num_chars_for_client(serial_driver) > 0) {
+                    /* Decrement `num_chars_for_client`. */
+                    serial_driver_dec_num_chars_for_client(serial_driver);
+                    /* The dequeued buffer's address will be stored in `buf_addr`. */
+                    uintptr_t buf_addr;
+                    /* The dequeued buffer's length will be stored in `buf_len`. */
+                    unsigned int buf_len;
+                    /* We don't use the `cookie` but the `dequeue_avail` function call requires
+                     * a valid pointer for the `cookie` param, so we provide one to it anyway. */
+                    void *unused_cookie;
+                    /* Dequeue an available buffer from the Receive-available ring. */
+                    int ret_dequeue_avail = dequeue_avail(
+                            &serial_driver->rx_ring_buf_handle,
+                            &buf_addr,
+                            &buf_len,
+                            &unused_cookie
+                    );
+                    if (ret_dequeue_avail < 0) {
+                        sel4cp_dbg_puts("Failed to dequeue buffer from Receive available queue in notified().\n");
+                        return;
+                    }
+                    /* Set the first byte of the buffer to the character. */
+                    ((char *) buf_addr)[0] = (char) c;
+                    /* TODO: Think about cache operations for non-serial driver. */
+                    /* Enqueue our now-modified buffer onto the Receive-used ring. */
+                    int ret_enqueue_used = enqueue_used(
+                            &serial_driver->rx_ring_buf_handle,
+                            buf_addr, /* This is the buffer that contains our single character. */
+                            1, /* We only ever send a single character. */
+                            unused_cookie
+                    );
+                    if (ret_enqueue_used < 0) {
+                        sel4cp_dbg_puts("Received-used ring is full in notified().\n");
+                        return;
+                    }
+                }
             }
             /* Acknowledge receipt of the interrupt. */
             sel4cp_irq_ack(channel);
-            return;
+            break;
         }
         /* This is triggered when `serial_client` wants to `printf` something. */
         case SERIAL_DRIVER_TO_SERIAL_CLIENT_PRINTF_CHANNEL: {
@@ -228,7 +271,7 @@ void notified(sel4cp_channel channel) {
         case SERIAL_DRIVER_TO_SERIAL_CLIENT_GETCHAR_CHANNEL: {
             /* Increment the number of characters to retrieve for a client. */
             serial_driver_inc_num_chars_for_client(serial_driver);
-            sel4cp_dbg_puts("Notification reached here!");
+//            sel4cp_dbg_puts("Notification reached here!");
             break;
         }
         default:
