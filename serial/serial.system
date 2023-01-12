@@ -14,10 +14,11 @@
     mapped to the same address, the SDDF's ring buffer mechanism of transporting
     data across PDs will NOT work. This is because the SDDF's ring buffer
     mechanism passes the virtual address of a `shared_dma` buffer from PD to PD,
-    which enables this transport mechanism to be zero-copy. This requirement to
-    map `shared_dma` to the same virtual address space in various PDs can be
-    alleviated if there was a mechanism to translate virtual addresses across
-    PDs (VSpaces); however, such a mechanism does NOT currently exist. -->
+    which enables the SDDF's transport mechanism to be zero-copy. Theoretically,
+    the requirement to map the `shared_dma` to the same virtual address in
+    various PDs could be alleviated if there existed a mechanism to translate
+    virtual addresses across PDs (VSpaces); however, such a mechanism does NOT
+    currently exist. -->
     <memory_region
             name="shared_dma"
             size="0x200_000"
