@@ -4,15 +4,15 @@
  * corresponds to the Physical Address of the UART device by the seL4CP tool. */
 uintptr_t uart_base_vaddr;
 
-/* TODO: Explain. */
-uintptr_t tx_avail_ring_buf;
-/* TODO: Explain. */
-uintptr_t tx_used_ring_buf;
-/* TODO: Explain. */
+/* Refer to `serial_client.c` for explanation. */
 uintptr_t shared_dma;
-/* TODO: Explain. */
+/* Refer to `serial_client.c` for explanation. */
+uintptr_t tx_avail_ring_buf;
+/* Refer to `serial_client.c` for explanation. */
+uintptr_t tx_used_ring_buf;
+/* Refer to `serial_client.c` for explanation. */
 uintptr_t rx_avail_ring_buf;
-/* TODO: Explain. */
+/* Refer to `serial_client.c` for explanation. */
 uintptr_t rx_used_ring_buf;
 
 serial_driver_t global_serial_driver = {};
