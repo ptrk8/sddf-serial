@@ -243,7 +243,11 @@ static int serial_client_getchar(serial_client_t *serial_client) {
          * will be nothing in the Receive-Used ring if the user has yet to enter
          * a character into the console. Blocking here while there is no user
          * input is the expected behaviour of `getchar`. */
-        sel4cp_dbg_puts(""); /* TODO: Get rid of this weird hack and find out why code doesn't work without it. */
+        sel4cp_dbg_puts(""); /* This seemingly useless print statement is
+        required in order to prevent the C compiler from optimising this entire
+        while-loop out (which it will do if there was nothing in the body of
+        this while-loop). When we aren't in debug mode, this will be compiled
+        into a noop, which we're fine with. */
     }
     /* We only reach this point when there is a successful dequeue from the
      * Receive-Used ring, which means `buf_addr` and `buf_len` are populated
