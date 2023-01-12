@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <system>
-    <!-- We create in a 4K page of physical memory at 0x30890000, which is the
-    physical address where the UART device registers are mapped to. -->
+    <!-- This is a 4KB memory region at the physical address of 0x30890000,
+    which is where the UART device registers are mapped to. -->
     <memory_region
             name="uart"
             size="0x10_000"
             phys_addr="0x30890000"/>
+    <!-- This is a 2GB memory region with a 2GB page size. -->
     <!--TODO: Explain -->
     <memory_region
             name="tx_avail_ring_buf"
