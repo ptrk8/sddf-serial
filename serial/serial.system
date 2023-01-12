@@ -6,17 +6,6 @@
             name="uart"
             size="0x10_000"
             phys_addr="0x30890000"/>
-    <!-- This is a 2GB memory region with a 2GB page size. -->
-    <!--TODO: Explain -->
-    <memory_region
-            name="tx_avail_ring_buf"
-            size="0x200_000"
-            page_size="0x200_000"/>
-    <!--TODO: Explain -->
-    <memory_region
-            name="tx_used_ring_buf"
-            size="0x200_000"
-            page_size="0x200_000"/>
     <!-- In the SDDF's design-documentation, `shared_dma` is referred to as the
     "Data Region". `shared_dma` is an array of I/O buffers that will be used to
     pass/transport data from `serial_client` to `serial_driver` and vice-versa.
@@ -28,10 +17,20 @@
     which enables this transport mechanism to be zero-copy. This requirement to
     map `shared_dma` to the same virtual address space in various PDs can be
     alleviated if there was a mechanism to translate virtual addresses across
-    PDs (VSpaces); however, such a mechanism does NOT currently exist.
-    -->
+    PDs (VSpaces); however, such a mechanism does NOT currently exist. -->
     <memory_region
             name="shared_dma"
+            size="0x200_000"
+            page_size="0x200_000"/>
+    <!-- This is a 2GB memory region with a 2GB page size. -->
+    <!--TODO: Explain -->
+    <memory_region
+            name="tx_avail_ring_buf"
+            size="0x200_000"
+            page_size="0x200_000"/>
+    <!--TODO: Explain -->
+    <memory_region
+            name="tx_used_ring_buf"
             size="0x200_000"
             page_size="0x200_000"/>
     <!--TODO: Explain -->
