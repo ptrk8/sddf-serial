@@ -23,7 +23,7 @@
             name="shared_dma"
             size="0x200_000"
             page_size="0x200_000"/>
-    <!-- This is a 2GB memory region with a 2GB page size. An explanation of the
+    <!-- This is a 2MB memory region with a 2MB page size. An explanation of the
     purpose of this memory region is provided in `serial_client.c`. The SDDF
     does not require this memory region to be mapped to a specific virtual
     address. -->
@@ -31,7 +31,7 @@
             name="tx_avail_ring_buf"
             size="0x200_000"
             page_size="0x200_000"/>
-    <!-- This is a 2GB memory region with a 2GB page size. An explanation of the
+    <!-- This is a 2MB memory region with a 2MB page size. An explanation of the
     purpose of this memory region is provided in `serial_client.c`. The SDDF
     does not require this memory region to be mapped to a specific virtual
     address. -->
@@ -39,7 +39,7 @@
             name="tx_used_ring_buf"
             size="0x200_000"
             page_size="0x200_000"/>
-    <!-- This is a 2GB memory region with a 2GB page size. An explanation of the
+    <!-- This is a 2MB memory region with a 2MB page size. An explanation of the
     purpose of this memory region is provided in `serial_client.c`. The SDDF
     does not require this memory region to be mapped to a specific virtual
     address. -->
@@ -47,7 +47,7 @@
             name="rx_avail_ring_buf"
             size="0x200_000"
             page_size="0x200_000"/>
-    <!-- This is a 2GB memory region with a 2GB page size. An explanation of the
+    <!-- This is a 2MB memory region with a 2MB page size. An explanation of the
     purpose of this memory region is provided in `serial_client.c`. The SDDF
     does not require this memory region to be mapped to a specific virtual
     address. -->
