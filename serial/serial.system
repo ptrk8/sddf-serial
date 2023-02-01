@@ -4,7 +4,7 @@
     which is where the UART device registers are mapped to. -->
     <memory_region
             name="uart"
-            size="0x10_000"
+            size="0x1_000"
             phys_addr="0x30890000"/>
     <!-- In the SDDF's design-documentation, `shared_dma` is referred to as the
     "Data Region". `shared_dma` is an array of I/O buffers that will be used to
